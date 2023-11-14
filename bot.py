@@ -1,4 +1,19 @@
+"""
+    Murad:
+    CHECK THE [TODO]: 's!!!!
+
+    VERY IMPORTANT!!!!
+"""
+
+from sqlite3 import Error
+from dotenv import load_dotenv
+from db import db_connect;
+
+import sqlite3
+import os
 import discord
+from discord import commands
+import openai
 
 TOKEN = os.getenv('API_KEY')
 
