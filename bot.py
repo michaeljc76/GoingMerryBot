@@ -20,6 +20,7 @@ TOKEN = os.getenv('API_KEY')
 async def on_ready(self):
     print(f'Logged on as {self.user}!')
 
+
 async def on_message(self, message):
     print(f'Message from {message.author}: {message.content}')
 
@@ -40,8 +41,8 @@ async def on_message(self, message):
     # [TODO]: INCREMENT 'amount_of_posts' FOR EACH USER
 
     channel_send = message.channel.name
-    #[TODO]: SAVE THE CHANNEL NAME TO THE GRAPH FOR EACH USER
-    #[NOTE]: If there is aleady a channel name in the graph, then remove it and add the new one
+    # [TODO]: SAVE THE CHANNEL NAME TO THE GRAPH FOR EACH USER
+    # [NOTE]: If there is aleady a channel name in the graph, then remove it and add the new one
 
     # Check if the message starts with the ! prefix
     if message.content.startswith('!'):
@@ -52,17 +53,17 @@ async def on_message(self, message):
             message.send(gpt_response)
 
 
-#@bot.command(name='ai')
+# @bot.command(name='ai')
 async def determine_text_appropriateness(self, message):
     try:
         automod = ("Determine whether or not this post is appropriate for a kindergarten environment."
-                    "If it is not, then determine a rating from 1-10 on how inappropriate it is."
-                    "If it is beyond a 5, then we will delete the post and send a warning to the user."
-                    "Restrict your message to ONLY an integer value from 1-10 if it's inappropriate."
-                    "If the message IS appropriate, then return a 0."
-                    "Here is the message in question: " + message.content)
+                   "If it is not, then determine a rating from 1-10 on how inappropriate it is."
+                   "If it is beyond a 5, then we will delete the post and send a warning to the user."
+                   "Restrict your message to ONLY an integer value from 1-10 if it's inappropriate."
+                   "If the message IS appropriate, then return a 0."
+                   "Here is the message in question: " + message.content)
 
-        #[TODO]: IF THE MESSAGE IS INAPPROPRIATE, THEN ADD THE POINTS TO A GRAPH FOR EACH USER
+        # [TODO]: IF THE MESSAGE IS INAPPROPRIATE, THEN ADD THE POINTS TO A GRAPH FOR EACH USER
 
         response = self.get_chatgpt_response(automod)
         print(response)
@@ -70,6 +71,7 @@ async def determine_text_appropriateness(self, message):
 
     except Exception as e:
         print(e)
+
 
 # Translates text from one language to another using ChatGPT openAI
 async def translate_text(self, message):
@@ -84,16 +86,18 @@ async def translate_text(self, message):
     except Exception as e:
         print(e)
 
+
 async def get_chatgpt_response(self, args):
     if len(args) == 0:
         return "Please enter a message to generate a response."
     else:
         input_text = " ".join(args)
 
-        #[TODO]: SAVE THIS INPUT MESSAGE TO THE GRAPH FOR EACH USER
-        #[NOTE]: If there is aleady a message in the graph, then remove it and add the new one
+        # [TODO]: SAVE THIS INPUT MESSAGE TO THE GRAPH FOR EACH USER
+        # [NOTE]: If there is aleady a message in the graph, then remove it and add the new one
 
         return self.generate_ai_response(input_text)
+
 
 async def generate_ai_response(self, input_text):
     try:
