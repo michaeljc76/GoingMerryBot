@@ -3,17 +3,12 @@ from discord.ext import commands
 import responses
 import os
 from dotenv import load_dotenv
+import openai
+
 
 load_dotenv()
 
 TOKEN=os.getenv('BOT_TOKEN')
-
-async def send_message(message, user_message, is_private):
-    try:
-        response = responses.get_response(user_message)
-        await message.author.send(response) if is_private else await message.channel.send(response)
-    except Exception as e:
-        print(e)
 
 def run_bot():
     intents = discord.Intents.default()
@@ -42,3 +37,10 @@ def run_bot():
             await send_message(message, user_message, is_private=False)
 
     client.run(TOKEN)
+
+async def send_message(message, user_message, is_private):
+    try:
+        response = responses.get_response(user_message)
+        await message.author.send(response) if is_private else await message.channel.send(response)
+    except Exception as e:
+        print(e)
