@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+TOKEN=os.getenv('BOT_TOKEN')
+
 async def send_message(message, user_message, is_private):
     try:
         response = responses.get_response(user_message)
@@ -14,7 +16,6 @@ async def send_message(message, user_message, is_private):
         print(e)
 
 def run_bot():
-    BOT_TOKEN=os.getenv(BOT_TOKEN)
     intents = discord.Intents.default()
     intents.message_content = True
     client = discord.Client(intents=intents)
@@ -40,4 +41,4 @@ def run_bot():
         else:
             await send_message(message, user_message, is_private=False)
 
-    client.run(BOT_TOKEN)
+    client.run(TOKEN)
