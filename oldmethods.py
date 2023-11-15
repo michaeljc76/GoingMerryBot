@@ -10,10 +10,11 @@ from db import db_connect;
 
 import sqlite3
 
-async def on_ready(self):
-    print(f'Logged on as {self.user}!')
+# IMPLEMENTED
+# async def on_ready(self):
+#     print(f'Logged on as {self.user}!')
 
-
+# IMPLEMENTED
 async def on_message(self, message):
     print(f'Message from {message.author}: {message.content}')
 
