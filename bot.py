@@ -34,10 +34,25 @@ class Bot(discord.Client):
             response = await generate_ai_response(prompt=user_message)
             await message.channel.send(response)
 
+        if message.content.startswith('!translate'):
+            command = message.content.split(' ')[0]
+            user_message = message.content.replace('!translate', '')
+            print(command, user_message)
+
+        if(user_message == ""):
+            await message.channel.send("Please provide a message after !translate")
+        elif command == '!translate':
+            translate_prompt = ("Translate the following text to English, only send the traslation:" + user_message)
+            response = await generate_ai_response(prompt=translate_prompt)
+            await message.channel.send(response)
+
         # if await determine_text_appropriateness(message.content):
         #     await message.delete()
         #     await message.author.send("Your message was inappropriate. Please refrain from sending inappropriate messages.")
         
+
+# OPENAI API METHODS
+
 async def generate_ai_response(prompt):
     try:
         # Use OpenAI API to generate a response
