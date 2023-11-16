@@ -22,7 +22,14 @@ async def on_message(self, message):
     if message.author == self.user:
         return
 
-    result = self.determine_text_appropriateness(message)
+    message = self.determine_text_appropriateness(message)
+    for i in range(10):
+        if message.find(i) != -1:
+            result = i
+            break
+        else:
+            result = 0
+
     if result != 0:
         # Delete message
         await message.delete()

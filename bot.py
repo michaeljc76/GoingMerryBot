@@ -22,6 +22,9 @@ class Bot(discord.Client):
             return
         
         command, user_message = None, None
+
+        # determine_text_appropriateness(message.content):
+
         
         if message.content.startswith('!ai'):
             command = message.content.split(' ')[0]
