@@ -1,83 +1,128 @@
-import discord
-from discord.ext import commands
-import openai
+"""
+    Murad:
+    CHECK THE [TODO]: 's!!!!
+
+    VERY IMPORTANT!!!!
+"""
+
+from sqlite3 import Error
 from dotenv import load_dotenv
-import responses
+from db import db_connect;
+
+import sqlite3
 import os
+import discord
+from discord import commands
+import openai
 
-load_dotenv()
+TOKEN = os.getenv('API_KEY')
 
-TOKEN = os.getenv('BOT_TOKEN')
-openai.api_key = os.getenv('AI_KEY')
+# help commend prefix> !help
+bot = commands.Bot(command_prefix='!')
+
+@bot.command(name='help')
+
+async def help_command(ctx):
+    help_message = "Available commands:\n"
+    for command in bot.commands:
+        help_message += f"!{command.name}: {command.help}\n"
+    await ctx.send(help_message) 
+
+async def on_ready(self):
+    print(f'Logged on as {self.user}!')
 
 
-class Bot(discord.Client):
-    async def on_ready(self):
-        print(f'{self.user.name} is now running')
+async def on_message(self, message):
+    print(f'Message from {message.author}: {message.content}')
 
-    async def on_message(self, message):
-        print(f'{message.author} said: "{message.content}" ({message.channel})')
+    # Check if from bot
+    if message.author == self.user:
+        return
 
-        if message.author == self.user:
-            return
-        
-        command, user_message = None, None
+    result = self.determine_text_appropriateness(message)
+    if result != 0:
+        # Delete message
+        await message.delete()
+        # Send warning to user
+        await message.author.send("Your message was inappropriate. Please refrain from sending inappropriate messages.")
 
-        # determine_text_appropriateness(message.content):
+        return
 
-        
-        if message.content.startswith('!ai'):
-            command = message.content.split(' ')[0]
-            user_message = message.content.replace('!ai', '')
-            print(command, user_message)
+    # [TODO]: ADD POINTS TO A GRAPH FOR EACH USER
+    # [TODO]: INCREMENT 'amount_of_posts' FOR EACH USER
 
-        if(user_message == ""):
-            await message.channel.send("Please provide a prompt after !ai")
-        elif command == '!ai':
-            response = await generate_ai_response(prompt=user_message)
-            await message.channel.send(response)
+    channel_send = message.channel.name
+    # [TODO]: SAVE THE CHANNEL NAME TO THE GRAPH FOR EACH USER
+    # [NOTE]: If there is aleady a channel name in the graph, then remove it and add the new one
 
-        if message.content.startswith('!translate'):
-            command = message.content.split(' ')[0]
-            user_message = message.content.replace('!translate', '')
-            print(command, user_message)
+    # Check if the message starts with the ! prefix
+    if message.content.startswith('!'):
+        # Get the command and arguments
+        command, *args = message.content[1:].split()
+        if command == 'ai':
+            gpt_response = self.get_chatgpt_response(args)
+            message.send(gpt_response)
 
-        if(user_message == ""):
-            await message.channel.send("Please provide a message after !translate")
-        elif command == '!translate':
-            translate_prompt = ("Translate the following text to English, only send the traslation:" + user_message)
-            response = await generate_ai_response(prompt=translate_prompt)
-            await message.channel.send(response)
 
-        # if await determine_text_appropriateness(message.content):
-        #     await message.delete()
-        #     await message.author.send("Your message was inappropriate. Please refrain from sending inappropriate messages.")
-        
+# @bot.command(name='ai')
+async def determine_text_appropriateness(self, message):
+    try:
+        automod = ("Determine whether or not this post is appropriate for a kindergarten environment."
+                   "If it is not, then determine a rating from 1-10 on how inappropriate it is."
+                   "If it is beyond a 5, then we will delete the post and send a warning to the user."
+                   "Restrict your message to ONLY an integer value from 1-10 if it's inappropriate."
+                   "If the message IS appropriate, then return a 0."
+                   "Here is the message in question: " + message.content)
 
-# OPENAI API METHODS
+        # [TODO]: IF THE MESSAGE IS INAPPROPRIATE, THEN ADD THE POINTS TO A GRAPH FOR EACH USER
 
-async def generate_ai_response(prompt):
+        response = self.get_chatgpt_response(automod)
+        print(response)
+        return response
+
+    except Exception as e:
+        print(e)
+
+
+# Translates text from one language to another using ChatGPT openAI
+async def translate_text(self, message):
+    try:
+        translate_prompt = ("Translate the following text from its current language to English."
+                            "Only send the traslation, nothing else.: " + message.content)
+        text_to_send = self.get_chatgpt_response(translate_prompt)
+
+        # Send message to chat
+        message.send(text_to_send)
+
+    except Exception as e:
+        print(e)
+
+
+async def get_chatgpt_response(self, args):
+    if len(args) == 0:
+        return "Please enter a message to generate a response."
+    else:
+        input_text = " ".join(args)
+
+        # [TODO]: SAVE THIS INPUT MESSAGE TO THE GRAPH FOR EACH USER
+        # [NOTE]: If there is aleady a message in the graph, then remove it and add the new one
+
+        return self.generate_ai_response(input_text)
+
+
+async def generate_ai_response(self, input_text):
     try:
         # Use OpenAI API to generate a response
-        response = openai.completions.create(
-            model="text-davinci-003",
+        response = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=input_text,
             temperature=0.7,
             max_tokens=150,
-            prompt=prompt,
+            n=1
         )
 
-        response_dict = response.choices
-        if response_dict and len(response_dict) > 0:
-            prompt_response = response_dict[0].text
-        return prompt_response
+        return response.choices[0].text
 
     except Exception as e:
         print(f"Error generating AI response: {e}")
-        return "An error occurred while generating the response."
-
-intents = discord.Intents.default()
-intents.message_content = True
-
-client = Bot(intents=intents)
-    
-#         # [TODO]: IF THE MESSAGE IS INAPPROPRIATE, THEN ADD THE POINTS TO A GRAPH FOR EACH USER
+        return "Sorry, an error occurred while generating the AI response."
