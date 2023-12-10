@@ -52,21 +52,32 @@ class Bot(discord.Client):
                 user_entry = Node(member.display_name, parent=root)
 
             for channel in channels:
-                messages = [message async for message in channel.history(limit=123)]
+                messages = [message async for message in channel.history(limit=400)]
 
                 for message in messages:
                     author = message.author
                     node = search.find(root, lambda node: node.name is author.display_name)
-                    value = 1
+                    value_points = 1
 
                     try:
-                        value = node.children[0].name
+                        name = node.children[0].name
+                        print(name)
+                        value_points = int(name.replace('Score: ', ''))
                     except IndexError:
-                        value = 1
-
-                    node.children = {Node(1 + value, parent=node)}
+                        value_points = 1
+                    roles = Roles: "+ str(list(map(lambda x: x.name, list(message.author.roles[1:]))))
+                    node.children = [ Node(name="Score: " + str(1 + value_points), parent=node), Node(name=roles, parent=node) ]
 
             await message.channel.send(RenderTree(root).by_attr("name"))
+
+        if message.content.startswith('!help'):
+            await message.channel.send("""
+Available commands:
+`!ai`: Query the open api with a query
+`!help`: Dis play this message
+`!score`: Calculate the score of each user based on the last 300 messages
+`!translate`: Translate a sentence from one language to another
+            """)
 
         if(user_message == ""):
             await message.channel.send("Please provide a message after !translate")
@@ -85,8 +96,6 @@ def get_command_and_message(content):
     user_message = content.replace('!score ', '')
 
     return (command, user_message)
-
-# OPENAI API METHODS
 
 async def generate_ai_response(prompt):
     try:
