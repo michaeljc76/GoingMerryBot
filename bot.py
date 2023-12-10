@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import openai
-import responses
 import os
 
 
@@ -20,7 +19,7 @@ class Bot(discord.Client):
         print(f'{self.user.name} is now running')
 
     async def on_message(self, message):
-        # print(f'{message.author} said: "{message.content}" ({message.channel})')
+        print(f'{message.author} said: "{message.content}" ({message.channel})')
 
         if message.author == self.user:
             return
@@ -32,21 +31,28 @@ class Bot(discord.Client):
             user_message = message.content.replace('!ai', '')
             print(command, user_message)
 
-        if(user_message == ""):
-            await message.channel.send("Please provide a prompt after !ai")
-        elif command == '!ai':
-            response = await generate_ai_response(prompt=user_message)
-            await message.channel.send(response)
+            if(user_message == ""):
+                await message.channel.send("Please provide a prompt after !ai")
+            elif command == '!ai':
+                response = await generate_ai_response(prompt=user_message)
+                await message.channel.send(response)
 
         if message.content.startswith('!translate'):
             command = message.content.split(' ')[0]
             user_message = message.content.replace('!translate', '')
-            print(command, user_message)
+
+            if(user_message == ""):
+                await message.channel.send("Please provide a message after !translate")
+            elif command == '!translate':
+                translate_prompt = ("Translate the following text to English, only send the traslation:" + user_message)
+                response = await generate_ai_response(prompt=translate_prompt)
+                await message.channel.send(response)
 
         if message.content.startswith('!score'):
             (command, user_message) = get_command_and_message(message.content)
             channels = list(message.guild.text_channels)
             members = [member async for member in message.guild.fetch_members(limit=None)]
+            root = Node("Data")
 
             for member in members:
                 user_entry = Node(member.display_name, parent=root)
@@ -61,12 +67,19 @@ class Bot(discord.Client):
 
                     try:
                         name = node.children[0].name
-                        print(name)
                         value_points = int(name.replace('Score: ', ''))
                     except IndexError:
                         value_points = 1
-                    roles = Roles: "+ str(list(map(lambda x: x.name, list(message.author.roles[1:]))))
-                    node.children = [ Node(name="Score: " + str(1 + value_points), parent=node), Node(name=roles, parent=node) ]
+
+                    roles_node = Node(name="Roles", parent=node)
+
+                    for role in message.author.roles[1:]:
+                        list_roles = list(roles_node.children)
+                        list_roles.append(Node(name=role.name, parent=roles_node))
+                        roles_node.children = list_roles
+
+                    
+                    node.children = [ Node(name="Score: " + str(1 + value_points), parent=node), roles_node]
 
             await message.channel.send(RenderTree(root).by_attr("name"))
 
@@ -79,17 +92,6 @@ Available commands:
 `!translate`: Translate a sentence from one language to another
             """)
 
-        if(user_message == ""):
-            await message.channel.send("Please provide a message after !translate")
-        elif command == '!translate':
-            translate_prompt = ("Translate the following text to English, only send the traslation:" + user_message)
-            response = await generate_ai_response(prompt=translate_prompt)
-            await message.channel.send(response)
-
-        # if await determine_text_appropriateness(message.content):
-        #     await message.delete()
-        #     await message.author.send("Your message was inappropriate. Please refrain from sending inappropriate messages.")
-        
 
 def get_command_and_message(content):
     command = content.split(' ')[0]
