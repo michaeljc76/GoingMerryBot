@@ -1,30 +1,31 @@
 import discord
 from discord.ext import commands
 import openai
-from dotenv import load_dotenv
 import responses
 import os
+
+
+from dotenv import load_dotenv
+from anytree import Node, RenderTree, search
 
 load_dotenv()
 
 TOKEN = os.getenv('BOT_TOKEN')
 openai.api_key = os.getenv('AI_KEY')
 
+root = Node("root")
 
 class Bot(discord.Client):
     async def on_ready(self):
         print(f'{self.user.name} is now running')
 
     async def on_message(self, message):
-        print(f'{message.author} said: "{message.content}" ({message.channel})')
+        # print(f'{message.author} said: "{message.content}" ({message.channel})')
 
         if message.author == self.user:
             return
-        
+
         command, user_message = None, None
-
-        # determine_text_appropriateness(message.content):
-
         
         if message.content.startswith('!ai'):
             command = message.content.split(' ')[0]
@@ -42,6 +43,31 @@ class Bot(discord.Client):
             user_message = message.content.replace('!translate', '')
             print(command, user_message)
 
+        if message.content.startswith('!score'):
+            (command, user_message) = get_command_and_message(message.content)
+            channels = list(message.guild.text_channels)
+            members = [member async for member in message.guild.fetch_members(limit=None)]
+
+            for member in members:
+                user_entry = Node(member.display_name, parent=root)
+
+            for channel in channels:
+                messages = [message async for message in channel.history(limit=123)]
+
+                for message in messages:
+                    author = message.author
+                    node = search.find(root, lambda node: node.name is author.display_name)
+                    value = 1
+
+                    try:
+                        value = node.children[0].name
+                    except IndexError:
+                        value = 1
+
+                    node.children = {Node(1 + value, parent=node)}
+
+            await message.channel.send(RenderTree(root).by_attr("name"))
+
         if(user_message == ""):
             await message.channel.send("Please provide a message after !translate")
         elif command == '!translate':
@@ -53,6 +79,12 @@ class Bot(discord.Client):
         #     await message.delete()
         #     await message.author.send("Your message was inappropriate. Please refrain from sending inappropriate messages.")
         
+
+def get_command_and_message(content):
+    command = content.split(' ')[0]
+    user_message = content.replace('!score ', '')
+
+    return (command, user_message)
 
 # OPENAI API METHODS
 
@@ -77,7 +109,9 @@ async def generate_ai_response(prompt):
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
 client = Bot(intents=intents)
+
+print(client.guilds)
     
-#         # [TODO]: IF THE MESSAGE IS INAPPROPRIATE, THEN ADD THE POINTS TO A GRAPH FOR EACH USER
