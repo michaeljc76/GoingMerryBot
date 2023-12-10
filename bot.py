@@ -7,12 +7,12 @@
 
 from sqlite3 import Error
 from dotenv import load_dotenv
-from db import db_connect;
+from db import db_connect
 
 import sqlite3
 import os
 import discord
-from discord import commands
+from discord.ext import commands
 import openai
 
 TOKEN = os.getenv('API_KEY')
@@ -21,25 +21,27 @@ TOKEN = os.getenv('API_KEY')
 bot = commands.Bot(command_prefix='!')
 
 @bot.command(name='help')
-
 async def help_command(ctx):
     help_message = "Available commands:\n"
     for command in bot.commands:
-        help_message += f"!{command.name}: {command.help}\n"
-    await ctx.send(help_message) 
+        help_message += f"!{command.name}: {command.description}\n"
+    await ctx.send(help_message)
 
-async def on_ready(self):
-    print(f'Logged on as {self.user}!')
+@bot.event
+async def on_ready():
+    print(f'Logged on as {bot.user}!')
 
-
-async def on_message(self, message):
+@bot.event
+async def on_message(message):
     print(f'Message from {message.author}: {message.content}')
 
     # Check if from bot
-    if message.author == self.user:
+    if message.author == bot.user:
         return
 
-    result = self.determine_text_appropriateness(message)
+    # Call determine_text_appropriateness only once
+    result = await determine_text_appropriateness(message)
+
     if result != 0:
         # Delete message
         await message.delete()
@@ -53,19 +55,19 @@ async def on_message(self, message):
 
     channel_send = message.channel.name
     # [TODO]: SAVE THE CHANNEL NAME TO THE GRAPH FOR EACH USER
-    # [NOTE]: If there is aleady a channel name in the graph, then remove it and add the new one
+    # [NOTE]: If there is already a channel name in the graph, then remove it and add the new one
 
     # Check if the message starts with the ! prefix
     if message.content.startswith('!'):
         # Get the command and arguments
         command, *args = message.content[1:].split()
         if command == 'ai':
-            gpt_response = self.get_chatgpt_response(args)
-            message.send(gpt_response)
+            gpt_response = await get_chatgpt_response(args)
+            await message.channel.send(gpt_response)
 
 
 # @bot.command(name='ai')
-async def determine_text_appropriateness(self, message):
+async def determine_text_appropriateness(message):
     try:
         automod = ("Determine whether or not this post is appropriate for a kindergarten environment."
                    "If it is not, then determine a rating from 1-10 on how inappropriate it is."
@@ -76,7 +78,7 @@ async def determine_text_appropriateness(self, message):
 
         # [TODO]: IF THE MESSAGE IS INAPPROPRIATE, THEN ADD THE POINTS TO A GRAPH FOR EACH USER
 
-        response = self.get_chatgpt_response(automod)
+        response = await get_chatgpt_response(automod)
         print(response)
         return response
 
@@ -85,32 +87,32 @@ async def determine_text_appropriateness(self, message):
 
 
 # Translates text from one language to another using ChatGPT openAI
-async def translate_text(self, message):
+async def translate_text(message):
     try:
         translate_prompt = ("Translate the following text from its current language to English."
-                            "Only send the traslation, nothing else.: " + message.content)
-        text_to_send = self.get_chatgpt_response(translate_prompt)
+                            "Only send the translation, nothing else.: " + message.content)
+        text_to_send = await get_chatgpt_response(translate_prompt)
 
         # Send message to chat
-        message.send(text_to_send)
+        await message.channel.send(text_to_send)
 
     except Exception as e:
         print(e)
 
 
-async def get_chatgpt_response(self, args):
+async def get_chatgpt_response(args):
     if len(args) == 0:
         return "Please enter a message to generate a response."
     else:
         input_text = " ".join(args)
 
         # [TODO]: SAVE THIS INPUT MESSAGE TO THE GRAPH FOR EACH USER
-        # [NOTE]: If there is aleady a message in the graph, then remove it and add the new one
+        # [NOTE]: If there is already a message in the graph, then remove it and add the new one
 
-        return self.generate_ai_response(input_text)
+        return generate_ai_response(input_text)
 
 
-async def generate_ai_response(self, input_text):
+async def generate_ai_response(input_text):
     try:
         # Use OpenAI API to generate a response
         response = openai.Completion.create(
