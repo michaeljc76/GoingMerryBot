@@ -87,9 +87,9 @@ class Bot(discord.Client):
             await message.channel.send("""
 Available commands:
 `!ai`: Query the open api with a query
-`!help`: Dis play this message
+`!help`: Display all available commands
 `!score`: Calculate the score of each user based on the last 300 messages
-`!translate`: Translate a sentence from one language to another
+`!translate`: Translate a sentence to English
             """)
 
 
