@@ -44,7 +44,8 @@ class Bot(discord.Client):
             if(user_message == ""):
                 await message.channel.send("Please provide a message after !translate")
             elif command == '!translate':
-                translate_prompt = ("Translate the following text to English, only send the traslation:" + user_message)
+                language, sentence = user_message.split(' ', 1)
+                translate_prompt = ("Translate the following text to " + language + ", only send the traslation:" + user_message)
                 response = await generate_ai_response(prompt=translate_prompt)
                 await message.channel.send(response)
 
@@ -58,7 +59,7 @@ class Bot(discord.Client):
                 user_entry = Node(member.display_name, parent=root)
 
             for channel in channels:
-                messages = [message async for message in channel.history(limit=400)]
+                messages = [message async for message in channel.history(limit=None)]
 
                 for message in messages:
                     author = message.author
@@ -85,11 +86,11 @@ class Bot(discord.Client):
 
         if message.content.startswith('!help'):
             await message.channel.send("""
-Available commands:
-`!ai`: Query the open api with a query
-`!help`: Display all available commands
-`!score`: Calculate the score of each user based on the last 300 messages
-`!translate`: Translate a sentence to English
+                Available commands:
+                `!ai`: Query the open api with a query
+                `!help`: Display all available commands
+                `!score`: Calculate the score of each user based on the last 300 messages
+                `!translate`: Translate a sentence to English
             """)
 
 
@@ -103,7 +104,7 @@ async def generate_ai_response(prompt):
     try:
         # Use OpenAI API to generate a response
         response = openai.completions.create(
-            model="text-davinci-003",
+            model="gpt-3.5-turbo-instruct",
             temperature=0.7,
             max_tokens=150,
             prompt=prompt,
